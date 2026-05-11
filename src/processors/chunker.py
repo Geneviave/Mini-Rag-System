@@ -1,16 +1,8 @@
 import re
-from dataclasses import dataclass, field
+import uuid #bi3ml id lkol chunk automatically
+from models.db_schemes.DataChunk import DataChunk #bn7ot fih data
 
-
-@dataclass
-class Chunk:
-    text: str
-    metadata: dict = field(default_factory=dict)
-
-    def __len__(self):
-        return len(self.text.split())
-
-
+#bit3rf 3la goz2 el headers fl cv
 EN_SECTION_RE = re.compile(
     r"^(summary|objective|profile|about me"
     r"|work experience|professional experience|experience|employment|employment history"
@@ -26,13 +18,24 @@ EN_SECTION_RE = re.compile(
     r"|contact|personal information|personal details)$",
     re.IGNORECASE | re.MULTILINE,
 )
-
+#same but for arabic
 AR_SECTION_RE = re.compile(
-    r"^(summary_ar)$",
+    r"^(الملخص|الهدف الوظيفي|نبذة شخصية|نبذة عني"
+    r"|الخبرة العملية|الخبرة المهنية|الخبرة|تاريخ العمل"
+    r"|التعليم|المؤهلات العلمية|الخلفية الاكاديمية|الدراسة"
+    r"|المهارات|المهارات التقنية|الكفاءات"
+    r"|المشاريع|المشاريع الشخصية|المشاريع الرئيسية"
+    r"|الشهادات|الدورات التدريبية|الرخص"
+    r"|اللغات|اجادة اللغات"
+    r"|الجوائز|الانجازات|الشرف"
+    r"|المنشورات|الابحاث"
+    r"|التطوع|الانشطة|الاهتمامات|الهوايات"
+    r"|المراجع|المزكون"
+    r"|معلومات الاتصال|البيانات الشخصية)$",
     re.MULTILINE,
 )
 
-
+#bta5od satr w t2ol dh header wala la
 def is_section_header(line):
     s = line.strip()
     return bool(EN_SECTION_RE.match(s) or AR_SECTION_RE.match(s))
@@ -76,24 +79,20 @@ class CVChunker:
                 if not section_text.strip():
                     continue
 
-                for i, chunk_text in enumerate(self._sliding_window_chunk(section_text)):
+                for chunk_text in self._sliding_window_chunk(section_text):
                     if not chunk_text.strip():
                         continue
-                    all_chunks.append(Chunk(
-                        text=chunk_text,
-                        metadata={
-                            "source_file": source_file,
-                            "page_number": page_num,
-                            "section": section_name,
-                            "chunk_index": i,
-                            "language": page_lang,
-                            "approx_tokens": approx_tokens(chunk_text),
-                            "word_count": word_count(chunk_text),
-                        }
-                    ))
 
-        for g_idx, chunk in enumerate(all_chunks):
-            chunk.metadata["global_chunk_index"] = g_idx
+                    all_chunks.append(DataChunk(
+                        chunk_id=str(uuid.uuid4()),
+                        source_file=source_file,
+                        page_number=page_num,
+                        section=section_name,
+                        language=page_lang,
+                        text=chunk_text,
+                        approx_tokens=approx_tokens(chunk_text),
+                        word_count=word_count(chunk_text),
+                    ))
 
         return all_chunks
 
@@ -143,7 +142,7 @@ class CVChunker:
         return self._merge_short_chunks(chunks)
 
     def _split_sentences(self, text):
-        parts = re.split(r"(?<=[.!?])\s+|(?<=\n)\s*", text)
+        parts = re.split(r"(?<=[.!?؟])\s+|(?<=\n)\s*", text)
         return [s.strip() for s in parts if s.strip()]
 
     def _merge_short_chunks(self, chunks):

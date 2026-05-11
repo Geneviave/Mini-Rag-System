@@ -10,17 +10,15 @@ if "project_id" not in st.session_state:
 
 #upload
 st.header("📄 Upload PDF")
-files = st.file_uploader("Upload a PDF", type=["pdf"],accept_multiple_files=True)
+file = st.file_uploader("Upload a PDF", type=["pdf"])
 
 if st.button("Upload"):
-    if files:
-        for file in files:
-            res = requests.post(f"{BASE_URL}/upload",files={"file": (file.name, file, "application/pdf")})
-            if res.status_code == 200:
-                st.session_state.project_id = res.json()["project_id"]
-                st.success(f"{file.name} uploaded successfully!")
-            else:
-                st.error(f"Failed to upload {file.name}")
+    res = requests.post(f"{BASE_URL}/upload", files={"file": (file.name, file, "application/pdf")})
+    if res.status_code == 200:
+        st.session_state.project_id = res.json()["project_id"]
+        st.success(f"{file.name} uploaded successfully!")
+    else:
+        st.error(f"Failed to upload {file.name}")
 
 #process
 st.header("⚙️ Process Document")

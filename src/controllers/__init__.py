@@ -9,7 +9,9 @@ from processors.pdf_parser import PDFParser
 from processors.chunker import CVChunker
 from stores.vectordb.provider.QdrantDBClient import QdrantDBClient
 from sentence_transformers import SentenceTransformer
-from openai import OpenAI
+from stores.llm.provider import LLMProviderFactory
+from stores.llm.tempelate.locales.en import EnglishPrompts
+from stores.llm.tempelate.locales.ar import ArabicPrompts
 
 settings = get_settings()
 
@@ -66,7 +68,13 @@ async def process_file(project_id: str , db):
     ids = list(range(len(chunks)))
     # payloads = [chunk.metadata for chunk in chunks]
     #kan 3ndy hna mo4kla eni b3ml el metadata bs f kan ay so2al bs2lo ll model bta3y kan by2oly en m3ndo4 el m3loma w mkn4 by3rf ygawb
-    payloads = [{**chunk.metadata, "text": chunk.text} for chunk in chunks]
+    payloads = [{
+    "text": chunk.text,
+    "source_file": chunk.source_file,
+    "page_number": chunk.page_number,
+    "section": chunk.section,
+    "language": chunk.language,
+} for chunk in chunks]
     qdrant.insert_vectors(
         collection_name=project_id,
         vectors=vectors,
@@ -96,25 +104,34 @@ async def search_and_answer(project_id: str, question:str, db):
     context = "\n\n".join(
         [r.payload.get("source_file", "") + ": " + r.payload.get("text", str(r.payload)) for r in results])
 
-    prompt = f"""Based on the following context, answer the question.
+    # choose prompt language (Arabic or English)
+    if any('\u0600' <= ch <= '\u06FF' for ch in question):
+        prompt_template = ArabicPrompts.MATCH_CANDIDATE
+    else:
+        prompt_template = EnglishPrompts.MATCH_CANDIDATE
 
-    Context:
-    {context}
-
-    Question: {question}
-
-    Answer:"""
-    llm_client = OpenAI(
-        api_key=settings.OPENAI_API_KEY,
-        base_url=settings.OPENAI_API_BASE
+    prompt = prompt_template.format(
+        context=context,
+        question=question
     )
-    response = llm_client.chat.completions.create(
+    # create LLM provider using Factory Pattern
+    provider = LLMProviderFactory.get_provider(
+        provider_type="openai",
+        api_key=settings.OPENAI_API_KEY,
+        api_base=settings.OPENAI_API_BASE
+    )
+    # provider = LLMProviderFactory.get_provider(
+    #     provider_type="ollama",
+    #     api_key=None,
+    #     api_base="http://localhost:11434/v1"
+    # )
+    # generate final answer
+    answer = provider.generate(
+        prompt=prompt,
         model=settings.GENERATE_RESPONSE_MODEL,
-        messages=[{"role": "user", "content": prompt}],
         temperature=settings.TEMPERATURE,
         max_tokens=settings.MAX_RESPONSE_TOKENS
     )
-    answer = response.choices[0].message.content
     #a5r 7aga return el resources
     sources = [r.payload for r in results]
     return answer , sources

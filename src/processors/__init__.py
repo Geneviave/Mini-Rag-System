@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 from processors.pdf_parser import PDFParser
-from processors.chunker import CVChunker, Chunk
+from processors.chunker import CVChunker
 
 logger = logging.getLogger(__name__)
 
