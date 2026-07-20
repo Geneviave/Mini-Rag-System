@@ -9,7 +9,7 @@ from stores.llm.tempelate.locales.ar import ArabicPrompts
 
 class TemplateManager:
     # ديه بتجيب اللغة و لو مكتبتش من نفسه هتكون انجلش  هيروح يجيب انيه template
-    def init(self, language: str = "en"):
+    def __init__(self, language: str = "en"):
         self.language = language
         self._templates = {"en": EnglishPrompts, "ar": ArabicPrompts}
 

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 
+#a3rf 4kl el mongodb doc bta3 el chunk
 class DataChunk(BaseModel):
     chunk_id: str
     source_file: str

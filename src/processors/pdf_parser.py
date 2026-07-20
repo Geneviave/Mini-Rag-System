@@ -2,7 +2,6 @@ import fitz
 import re
 import unicodedata
 from pathlib import Path
-
 import arabic_reshaper
 from bidi.algorithm import get_display
 from langdetect import detect, LangDetectException

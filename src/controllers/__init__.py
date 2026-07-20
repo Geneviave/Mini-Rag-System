@@ -14,7 +14,6 @@ from stores.llm.tempelate.locales.en import EnglishPrompts
 from stores.llm.tempelate.locales.ar import ArabicPrompts
 
 settings = get_settings()
-
 async def upload_file(file: UploadFile , db):
     # awl 7aga validate the file type(pdf)
     if file.content_type not in settings.FILE_ALLOWED_EXTENSIONS:
@@ -56,6 +55,7 @@ async def process_file(project_id: str , db):
         raise HTTPException(status_code=400, detail="No content extracted from file")
     #Embed chunks using OpenAI
     texts = [chunk.text for chunk in chunks]
+    #est5dmna all-MiniLM-L6-v2 3l4an local(no API cost)
     embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
     vectors = embedding_model.encode(texts).tolist()
     #Store in Qdrant
@@ -97,19 +97,17 @@ async def search_and_answer(project_id: str, question:str, db):
     results = qdrant.search(collection_name= project_id , query_vector= question_vector , top_k = 5)
     if not results :
         raise HTTPException(status_code=404, detail="No content found")
-    #talt 7aga build context from results
+    #talt 7aga build context(a7sn chunks f text wa7ed) from results
     context = "\n\n".join(
         [r.payload.get("source_file", "") + ": " + r.payload.get("text", str(r.payload)) for r in results])
-    #rab3 7aga send to gemini
+    #rab3 7aga send to openai
     context = "\n\n".join(
         [r.payload.get("source_file", "") + ": " + r.payload.get("text", str(r.payload)) for r in results])
-
     # choose prompt language (Arabic or English)
     if any('\u0600' <= ch <= '\u06FF' for ch in question):
         prompt_template = ArabicPrompts.MATCH_CANDIDATE
     else:
         prompt_template = EnglishPrompts.MATCH_CANDIDATE
-
     prompt = prompt_template.format(
         context=context,
         question=question

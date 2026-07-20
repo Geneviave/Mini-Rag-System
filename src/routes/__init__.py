@@ -1,15 +1,15 @@
 # TIP: Initialize package exports here.
-from fastapi import APIRouter , UploadFile , File, Depends
-from fastapi.responses import JSONResponse
-from controllers import upload_file, process_file
+from fastapi import APIRouter , UploadFile , File
 from routes.schema import UploadResponse , ProcessResponse
 from helpers.config import get_settings
 import motor.motor_asyncio
 from controllers import upload_file, process_file, search_and_answer
 from routes.schema import UploadResponse, ProcessResponse, SearchRequest, SearchResponse
 
+#define el 3 API endpoints -> upload , process , search & answer
+#create a mongodb connection 3n tre2 motor
+#bwsl el frontend bl controllers
 settings = get_settings()
-
 #create mongodb client
 client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGODB_URI)
 db= client[settings.MONGODB_DB_NAME]
